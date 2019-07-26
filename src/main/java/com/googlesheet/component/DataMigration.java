@@ -2,6 +2,7 @@ package com.googlesheet.component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,6 +12,7 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.model.AppendValuesResponse;
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest;
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ClearValuesRequest;
@@ -24,50 +26,53 @@ public class DataMigration {
 	@Scheduled(fixedDelay = 100000)
 	public void migrateData() throws Exception {
 		List<Object> list = new ArrayList<>();
-		Employee e1 = new Employee();
-		e1.setId("1");
-		e1.setName("TestName1");
-		e1.setSal("test sal1");
-		e1.setCity("test city1");
+		for (int i = 0; i <= 5000; i++) {
+			Employee e1 = new Employee();
+			e1.setId("1");
+			e1.setName("TestName1");
+			e1.setSal("test sal5");
+			e1.setCity(String.valueOf(new Date().getMinutes()));
 
-		list.add(e1);
+			list.add(e1);
+		}
 
-		Employee e2 = new Employee();
-		e2.setId("2");
-		e2.setName("TestName2");
-		e2.setSal("test sal2");
-		e2.setCity("test city2");
-
-		list.add(e2);
-
-		Employee e3 = new Employee();
-		e3.setId("3");
-		e3.setName("TestName3");
-		e3.setSal("test sal3");
-		e3.setCity("test cit3");
-
-		list.add(e3);
-
-		Employee e4 = new Employee();
-		e4.setId("4");
-		e4.setName("TestName4");
-		e4.setSal("test sal4");
-		e4.setCity("test city4");
-
-		list.add(e4);
-
-		Employee e5 = new Employee();
-		e5.setId("5");
-		e5.setName("TestName5");
-		e5.setSal("test sal5");
-		e5.setCity("test city5");
-
-		list.add(e5);
-
-		update(list);
+		//update(list);
+		append(list);
+	}
+	
+	private void append(List<Object> list) throws Exception {
+		Sheets service = getSheetsService();
+		// Clear the sheet
+		ClearValuesRequest clearrequestBody = new ClearValuesRequest();
+		Sheets.Spreadsheets.Values.Clear request = service.spreadsheets().values()
+				.clear("1PVTjkVPqLO2aQdYU0cVnWM-2SZ_tUiqNm_7NiKZQSkk", "A:AT", clearrequestBody);
+		request.execute();
+		
+		ValueRange data = new ValueRange();
+		
+		List<List<Object>> values = new ArrayList<>();
+		values.add(Arrays.asList("Employee Id1", "Employee Name", "Employee Sal", "Employee City", "Employee City",
+				"Employee Id2", "Employee Name", "Employee Sal", "Employee City", "Employee City",
+				"Employee Id3", "Employee Name", "Employee Sal", "Employee City", "Employee City",
+				"Employee Id4", "Employee Name", "Employee Sal", "Employee City", "Employee City",
+				"Employee Id5", "Employee Name", "Employee Sal", "Employee City", "Employee City",
+				"Employee Id6", "Employee Name", "Employee Sal", "Employee City", "Employee City"));
+		values.add(Arrays.asList("Employee Id", "Employee Name", "Employee Sal", "Employee City"));
+		for (Object o : list) {
+			Employee e = (Employee) o;
+			values.add(Arrays.asList(String.valueOf(e.getId()), e.getName(), e.getSal(), e.getCity()));
+		}
+		
+		data.setValues(values);
+		
+		AppendValuesResponse result =
+		        service.spreadsheets().values().append("1PVTjkVPqLO2aQdYU0cVnWM-2SZ_tUiqNm_7NiKZQSkk", "A1", data)
+		                .setValueInputOption("USER_ENTERED")
+		                .execute();
+		System.out.println(result);
 	}
 
-	private void update(List<Object> list) throws Exception {
+	/*private void update(List<Object> list) throws Exception {
 		Sheets service = getSheetsService();
 		// Clear the sheet
 		ClearValuesRequest clearrequestBody = new ClearValuesRequest();
@@ -111,12 +116,13 @@ public class DataMigration {
 
 		Sheets.Spreadsheets.Values.BatchUpdate updateRequest = service.spreadsheets().values()
 				.batchUpdate("1PVTjkVPqLO2aQdYU0cVnWM-2SZ_tUiqNm_7NiKZQSkk", requestBody);
+		
 
 		BatchUpdateValuesResponse response = updateRequest.execute();
-
+		
 		System.out.println(response);
 
-	}
+	}*/
 
 	public static Sheets getSheetsService() throws Exception {
 		Credential credential = GoogleAuthorizeUtil.authorize();
